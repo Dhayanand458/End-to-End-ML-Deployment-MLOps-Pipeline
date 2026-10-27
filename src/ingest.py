@@ -43,18 +43,21 @@ def load_ag_news(max_samples: int | None = None) -> Tuple[pd.DataFrame, pd.DataF
     train_df = ds["train"].to_pandas()
     test_df  = ds["test"].to_pandas()
 
-    # Subsample for faster iteration (remove for full run)
+    # Subsample for faster iteration (remove for full run).
+    # Loop instead of groupby.apply so this stays compatible with pandas 2.x.
     if max_samples:
-        train_df = (
-            train_df.groupby("label", group_keys=False)
-                    .apply(lambda g: g.sample(min(len(g), max_samples // 4), random_state=42))
-                    .reset_index(drop=True)
-        )
-        test_df = (
-            test_df.groupby("label", group_keys=False)
-                   .apply(lambda g: g.sample(min(len(g), 1_000 // 4), random_state=42))
-                   .reset_index(drop=True)
-        )
+        n_train = max(1, max_samples // 4)
+        n_test = max(1, min(250, 1_000 // 4))
+        train_parts = [
+            g.sample(n=min(len(g), n_train), random_state=42)
+            for _, g in train_df.groupby("label")
+        ]
+        test_parts = [
+            g.sample(n=min(len(g), n_test), random_state=42)
+            for _, g in test_df.groupby("label")
+        ]
+        train_df = pd.concat(train_parts, ignore_index=True)
+        test_df = pd.concat(test_parts, ignore_index=True)
 
     label_map = {0: "World", 1: "Sports", 2: "Business", 3: "Sci/Tech"}
     train_df["label_name"] = train_df["label"].map(label_map)

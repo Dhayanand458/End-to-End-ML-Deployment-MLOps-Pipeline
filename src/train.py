@@ -327,6 +327,19 @@ EXPERIMENT_CONFIGS = [
     },
 ]
 
+if os.environ.get("CI_QUICK_TRAIN") == "1":
+    EXPERIMENT_CONFIGS = [
+        {
+            "run_name"    : "tfidf_lr_baseline",
+            "model_type"  : "tfidf_lr",
+            "max_features": 5_000,
+            "ngram_range" : [1, 1],
+            "C"           : 1.0,
+            "max_iter"    : 200,
+            "class_weight": "balanced",
+        }
+    ]
+
 
 def main():
     # ── MLflow setup ──────────────────────────────────────────────────────────
